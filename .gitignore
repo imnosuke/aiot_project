@@ -1,0 +1,58 @@
+# ===========================
+# FILE MÔ HÌNH NẶNG (> 50MB)
+# ===========================
+# Dùng Git LFS hoặc bỏ qua hoàn toàn
+*.keras
+*.tflite
+*.h5
+*.pb
+*.onnx
+*.pt
+*.pth
+
+# ===========================
+# DỮ LIỆU ẢNH / DATASET
+# ===========================
+data/
+datasets/
+*.zip
+*.tar.gz
+*.tar
+
+# ===========================
+# PYTHON
+# ===========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ===========================
+# VIRTUAL ENVIRONMENT
+# ===========================
+.venv/
+venv/
+env/
+ENV/
+
+# ===========================
+# JUPYTER / IDE
+# ===========================
+.ipynb_checkpoints/
+*.ipynb
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ===========================
+# HỆ ĐIỀU HÀNH
+# ===========================
+.DS_Store
+Thumbs.db
+desktop.ini
