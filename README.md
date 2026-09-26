@@ -126,10 +126,10 @@ Kết quả đo đạc trực tiếp từ quá trình chạy thử nghiệm nghi
 | Tiêu chí | Mô hình Keras (.keras) | Mô hình TFLite Quantized | So sánh & Đánh giá |
 | :--- | :---: | :---: | :--- |
 | **Dung lượng file (Model Size)** | **90.63 MB** | **23.13 MB** | 🔻 **Giảm ~74.5% dung lượng** |
-| **Độ chính xác (Accuracy)** | **96.00%** | **95.50%** | 🎯 **Chỉ chênh lệch 0.50%** |
-| **Thời gian phản hồi/ảnh (Latency)** | **98.70 ms** | **89.62 ms** | ⚡ **Tăng tốc phản hồi ~9.2%** |
-| **Throughput (FPS)** | **~10.13 frames/s** | **~11.15 frames/s** | 🚀 **Xử lý được nhiều ảnh hơn** |
-| **Tiêu thụ RAM (Tăng thêm)** | **~450.00 MB** | **~0.00 MB** | 💾 **TFLite tận dụng rất tốt bộ nhớ** |
+| **Độ chính xác (Accuracy)** | **96.00%** | **95.00%** | 🎯 **Chỉ chênh lệch 1.00%** |
+| **Thời gian phản hồi/ảnh (Latency)** | **143.23 ms** | **22.93 ms** | ⚡ **Tăng tốc phản hồi ~6.2x (nhanh hơn rất nhiều)** |
+| **Throughput (FPS)** | **~6.98 frames/s** | **~43.62 frames/s** | 🚀 **Xử lý lượng ảnh lớn hơn gấp ~6.2 lần** |
+| **Tiêu thụ RAM (Tăng thêm)** | **~60.18 MB** | **~0.00 MB** | 💾 **TFLite tận dụng rất tốt bộ nhớ** |
 | **Độ phức tạp (OPs)** | **3.856 GFLOPs** | **3.856 GOPs (INT8)** | ⚙️ **Chuyển Floating-point sang Integer** |
 | **Latency lý thuyết** | **19.28 ms** (0.2 TFLOPS) | **0.96 ms** (4.0 TOPS) | 💻 **Khả năng dự đoán trên Edge AI tốt** |
 
