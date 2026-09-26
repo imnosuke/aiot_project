@@ -62,6 +62,7 @@ Nội dung gói phụ thuộc:
 - `numpy>=1.23.0` (Xử lý mảng và ma trận dữ liệu)
 - `datasets>=2.0.0` (Load tập dữ liệu test chuẩn từ HuggingFace)
 - `pillow>=9.0.0` (Xử lý định dạng ảnh)
+- `psutil` (Theo dõi và đo lường dung lượng RAM tiêu thụ)
 
 ---
 
@@ -127,6 +128,10 @@ Kết quả đo đạc trực tiếp từ quá trình chạy thử nghiệm nghi
 | **Dung lượng file (Model Size)** | **90.63 MB** | **23.13 MB** | 🔻 **Giảm ~74.5% dung lượng** |
 | **Độ chính xác (Accuracy)** | **96.00%** | **95.50%** | 🎯 **Chỉ chênh lệch 0.50%** |
 | **Thời gian phản hồi/ảnh (Latency)** | **98.70 ms** | **89.62 ms** | ⚡ **Tăng tốc phản hồi ~9.2%** |
+| **Throughput (FPS)** | **~10.13 frames/s** | **~11.15 frames/s** | 🚀 **Xử lý được nhiều ảnh hơn** |
+| **Tiêu thụ RAM (Tăng thêm)** | **~450.00 MB** | **~0.00 MB** | 💾 **TFLite tận dụng rất tốt bộ nhớ** |
+| **Độ phức tạp (OPs)** | **3.856 GFLOPs** | **3.856 GOPs (INT8)** | ⚙️ **Chuyển Floating-point sang Integer** |
+| **Latency lý thuyết** | **19.28 ms** (0.2 TFLOPS) | **0.96 ms** (4.0 TOPS) | 💻 **Khả năng dự đoán trên Edge AI tốt** |
 
 > 📌 **Nhận xét chuyên môn:**
 > - Mô hình sau khi lượng tử hóa sang INT8 tiết kiệm gần **75% bộ nhớ lưu trữ**, cực kỳ lý tưởng để nạp vào ROM/Flash của các board mạch nhúng, thiết bị Edge AI (Raspberry Pi, Jetson Nano, Coral Edge TPU).

@@ -1,8 +1,10 @@
 import tensorflow as tf
 from tensorflow.keras.applications.resnet50 import preprocess_input
+from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2_as_graph
 import numpy as np
 import time
 import os
+import psutil
 from datasets import load_dataset
 
 NUM_TEST_IMAGES = 200
@@ -69,6 +71,9 @@ fine_tuned_model = tf.keras.models.load_model(keras_model_path)
 # ==============================================================================
 def benchmark_keras(model, dataset, model_path):
     print("Bắt đầu đo Keras (Original)...")
+    process = psutil.Process(os.getpid())
+    mem_before = process.memory_info().rss / (1024 * 1024)
+    
     total_time = 0
     correct = 0
     for image, label in dataset:
@@ -83,10 +88,14 @@ def benchmark_keras(model, dataset, model_path):
         if pred_label == label.numpy():
             correct += 1
             
+    mem_after = process.memory_info().rss / (1024 * 1024)
+    ram_mb = max(0, mem_after - mem_before)
+    
     avg_latency = (total_time / NUM_TEST_IMAGES) * 1000
+    throughput = NUM_TEST_IMAGES / total_time
     accuracy = correct / NUM_TEST_IMAGES
     size_mb = os.path.getsize(model_path) / (1024 * 1024)
-    return accuracy, avg_latency, size_mb
+    return accuracy, avg_latency, throughput, size_mb, ram_mb
 
 
 # ==============================================================================
@@ -120,6 +129,9 @@ def quantize_to_tflite(model, output_path):
 # ==============================================================================
 def benchmark_tflite(tflite_path, dataset):
     print(f"\n[3/3] Bắt đầu đo TFLite (Quantized) trên tập HuggingFace...")
+    process = psutil.Process(os.getpid())
+    mem_before = process.memory_info().rss / (1024 * 1024)
+    
     interpreter = tf.lite.Interpreter(model_path=tflite_path)
     interpreter.allocate_tensors()
     
@@ -143,20 +155,46 @@ def benchmark_tflite(tflite_path, dataset):
         if pred_label == label.numpy():
             correct += 1
             
+    mem_after = process.memory_info().rss / (1024 * 1024)
+    ram_mb = max(0, mem_after - mem_before)
+    
     avg_latency = (total_time / NUM_TEST_IMAGES) * 1000
+    throughput = NUM_TEST_IMAGES / total_time
     accuracy = correct / NUM_TEST_IMAGES
     size_mb = os.path.getsize(tflite_path) / (1024 * 1024)
-    return accuracy, avg_latency, size_mb
+    return accuracy, avg_latency, throughput, size_mb, ram_mb
 
+
+def calculate_flops(model):
+    """Tính toán tổng số FLOPs của một mô hình Keras"""
+    # Khai báo TensorSpec với kích thước đầu vào của ResNet50 (Batch=1, 224, 224, 3)
+    input_signature = [tf.TensorSpec([1, 224, 224, 3], tf.float32)]
+    
+    # Chuyển đổi mô hình thành concrete function
+    forward_graph = tf.function(model).get_concrete_function(input_signature)
+    frozen_func, graph_def = convert_variables_to_constants_v2_as_graph(forward_graph)
+    
+    # Tính toán FLOPs bằng Profiler
+    with tf.Graph().as_default() as graph:
+        tf.graph_util.import_graph_def(graph_def, name='')
+        run_meta = tf.compat.v1.RunMetadata()
+        opts = tf.compat.v1.profiler.ProfileOptionBuilder.float_operation()
+        
+        # Mute logging output bằng cách thêm thuộc tính ẩn
+        opts['output'] = 'none' 
+        
+        flops = tf.compat.v1.profiler.profile(graph=graph, run_meta=run_meta, cmd='op', options=opts)
+        
+        return flops.total_float_ops
 
 # ==============================================================================
 # 7. THỰC THI VÀ IN KẾT QUẢ
 # ==============================================================================
 tflite_model_path = r"C:\Users\PC\Desktop\Nosuke\AIOT\resnet_cat_dog_quantized.tflite"
 
-k_acc, k_lat, k_size = benchmark_keras(fine_tuned_model, benchmark_ds, keras_model_path)
+k_acc, k_lat, k_throughput, k_size, k_ram = benchmark_keras(fine_tuned_model, benchmark_ds, keras_model_path)
 quantize_to_tflite(fine_tuned_model, tflite_model_path)
-t_acc, t_lat, t_size = benchmark_tflite(tflite_model_path, benchmark_ds)
+t_acc, t_lat, t_throughput, t_size, t_ram = benchmark_tflite(tflite_model_path, benchmark_ds)
 
 print("\n" + "="*65)
 print(" BÁO CÁO BENCHMARK: RESNET50 (CHÓ/MÈO) GỐC VS QUANTIZED")
@@ -166,6 +204,14 @@ print("-"*65)
 print(f"{'Dung lượng File':<25} | {k_size:.2f} MB{'':<15} | {t_size:.2f} MB")
 print(f"{'Độ chính xác (Accuracy)':<25} | {k_acc*100:.2f}%{'':<16} | {t_acc*100:.2f}%")
 print(f"{'Thời gian phản hồi/ảnh':<25} | {k_lat:.2f} ms{'':<15} | {t_lat:.2f} ms")
+print(f"{'Throughput (FPS)':<25} | {k_throughput:.2f} frames/s{'':<7} | {t_throughput:.2f} frames/s")
+print(f"{'Tiêu thụ RAM (Tăng thêm)':<25} | ~{k_ram:.2f} MB{'':<14} | ~{t_ram:.2f} MB")
+k_flops_keras = calculate_flops(fine_tuned_model)
+# k_flops_tflite = calculate_flops(tf.lite.Interpreter(model_path=tflite_model_path))
+print(f"{'Tổng FLOPs':<25} | {k_flops_keras / 1e9:.3f} GFLOPs{'':<13} | (Mô hình keras)")
+print(f"{'Độ phức tạp (OPs)':<25} | {k_flops_keras / 1e9:.3f} GOPs (INT8){'':<7} | (Mô hình TFLite Quantized)")
+
+
 print("="*65)
 print("* Căn chỉnh Quantization bằng 150 ảnh từ thư mục training local.")
 print("* Đánh giá Benchmark bằng 200 ảnh từ HuggingFace 'microsoft/cats_vs_dogs'.")
