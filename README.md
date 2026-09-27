@@ -140,26 +140,13 @@ Kết quả đo đạc trực tiếp từ quá trình chạy thử nghiệm nghi
 
 ---
 
-## 🧱 Kiến trúc mô hình
+## 🧱 Kiến trúc mô hình (Gốc & Quantized)
 
-```
-Input Tensor (224, 224, 3)
-      │
-      ▼
-ResNet50 Backbone (Pretrained ImageNet, Frozen)
-      │
-      ▼
-GlobalAveragePooling2D
-      │
-      ▼
-Dropout (Rate = 0.2)
-      │
-      ▼
-Dense (1 Unit, Activation = Sigmoid)
-      │
-      ▼
-Output: Xác suất [0, 1] (0: Mèo / Cat, 1: Chó / Dog)
-```
+1. **Đầu vào (Input)**: Ảnh RGB kích thước `(224, 224, 3)`.
+2. **Trích xuất đặc trưng (Backbone)**: Sử dụng mô hình `ResNet50` (pretrained trên ImageNet, đã đóng băng trọng số).
+3. **Phân loại (Classification Head)**: Đi qua các lớp `GlobalAveragePooling2D` ➔ `Dropout (0.2)` ➔ `Dense (1 Unit, Sigmoid)`.
+4. **Đầu ra (Output gốc)**: Trả về xác suất phân loại (0: Mèo, 1: Chó) dưới định dạng Float32.
+5. **Lượng tử hóa (Quantization)**: Toàn bộ mạng được ép kiểu trọng số và activation sang số nguyên `INT8` (định dạng TFLite) giúp giảm nhẹ dung lượng và tăng tốc suy luận.
 
 ---
 
