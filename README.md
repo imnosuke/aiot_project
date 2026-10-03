@@ -6,11 +6,12 @@ Dự án này cung cấp quy trình hoàn chỉnh từ **huấn luyện mô hìn
 
 ## 📋 Mục lục
 1. [Cấu trúc dự án](#-cấu-trúc-dự-án)
-2. [Cài đặt môi trường](#-cài-đặt-môi-trường)
-3. [Tải và chuẩn bị Dataset](#-tải-và-chuẩn-bị-dataset)
-4. [Các bước thực thi chi tiết](#-các-bước-thực-thi-chi-tiết)
-5. [Kết quả Benchmark thực tế](#-kết-quả-benchmark-thực-tế)
-6. [Kiến trúc mô hình](#-kiến-trúc-mô-hình)
+2. [Hướng dẫn Clone Git](#-hướng-dẫn-clone-git)
+3. [Cài đặt môi trường](#-cài-đặt-môi-trường)
+4. [Tải và chuẩn bị Dataset](#-tải-và-chuẩn-bị-dataset)
+5. [Các bước thực thi chi tiết](#-các-bước-thực-thi-chi-tiết-chạy-với-docker-hoặc-local)
+6. [Kết quả Benchmark thực tế](#-kết-quả-benchmark-thực-tế)
+7. [Kiến trúc mô hình](#-kiến-trúc-mô-hình)
 
 ---
 
@@ -18,7 +19,10 @@ Dự án này cung cấp quy trình hoàn chỉnh từ **huấn luyện mô hìn
 
 ```
 AIOT/
-├── requirements.txt              # Danh sách các thư viện cần cài đặt
+├── docker-compose.yml            # File cấu hình luồng chạy Docker tự động
+├── Dockerfile                    # File cấu hình môi trường Docker
+├── requirements.txt              # Danh sách các thư viện Python
+├── download_data.py              # Script tự động tải dataset
 ├── train_dog_cat.py              # Script huấn luyện ResNet50 (Transfer Learning)
 ├── benchmark_hf.py               # Script lượng tử hóa INT8 & đo lường hiệu năng
 ├── resnet50_model.py             # File hỗ trợ kiến trúc mô hình
@@ -37,22 +41,21 @@ AIOT/
 
 ---
 
+## 📥 Hướng dẫn Clone Git
+
+Trước khi cài đặt và chạy thử nghiệm, bạn cần tải dự án về máy cục bộ. Hãy mở terminal và chạy:
+
+```bash
+git clone https://github.com/<username>/AIOT.git  # Thay bằng URL Git thực tế của bạn
+cd AIOT
+```
+
+---
+
 ## ⚙️ Cài đặt môi trường
 
-### 1. Khởi tạo và kích hoạt Virtual Environment (Khuyến nghị)
-* **Trên Windows:**
-  ```powershell
-  python -m venv .venv
-  .venv\Scripts\activate
-  ```
-* **Trên Linux / macOS:**
-  ```bash
-  python3 -m venv .venv
-  source .venv/bin/activate
-  ```
+Nếu bạn chạy trực tiếp trên máy (Local) thay vì dùng Docker, dự án đã chuẩn bị sẵn file `requirements.txt`. Cài đặt nhanh qua lệnh sau:
 
-### 2. Cài đặt các thư viện cần thiết
-Dự án đã chuẩn bị sẵn file [requirements.txt](requirements.txt). Cài đặt qua lệnh:
 ```bash
 pip install -r requirements.txt
 ```
@@ -66,52 +69,49 @@ Nội dung gói phụ thuộc:
 
 ---
 
-## 🗂️ Tải và chuẩn bị Dataset
+## 🚀 Các bước thực thi chi tiết
 
-Tập dữ liệu ảnh dùng cho huấn luyện và kiểm thử được lấy từ repository:
-🔗 **Link Dataset:** [guilhermedom/resnet50-transfer-learning-cats-and-dogs (data/raw)](https://github.com/guilhermedom/resnet50-transfer-learning-cats-and-dogs/tree/main/data/raw)
+Dự án hỗ trợ 2 cách tiếp cận để thực thi: chạy hoàn toàn tự động bằng Docker hoặc tự chạy thủ công từng bước. 
 
-Dự án có sẵn script để tải dữ liệu tự động. Dữ liệu sẽ được tự động tải về và giải nén vào thư mục `data/` với cấu trúc chuẩn:
+### 🐳 Cách 1: Tự động hoàn toàn bằng Docker Compose
+Dự án đã cấu hình sẵn file `docker-compose.yml` để tự động hóa toàn bộ quá trình. 
 
+Đầu tiên, bạn cần build (hoặc rebuild) image của dự án:
+```bash
+docker compose build
+```
+
+Sau đó, để chạy xuyên suốt toàn bộ luồng (Tải dữ liệu ➔ Huấn luyện ➔ Lượng tử hóa & Benchmark), hãy dùng lệnh:
+```bash
+docker compose up
+```
+> *Mẹo: Bạn có thể gộp chung 2 thao tác trên bằng lệnh ngắn gọn `docker compose up --build`*
+
+---
+
+### 💻 Cách 2: Chạy thủ công từng bước (Download ➔ Train ➔ Quantize)
+Nếu bạn muốn tự mình kiểm soát từng công đoạn, hãy lần lượt thực thi 3 bước dưới đây. (Lưu ý: Các lệnh ví dụ đang ở dạng chạy bằng Python cục bộ. Nếu bạn dùng Docker, có thể thay bằng `docker compose run --no-deps <tên-service>`).
+
+**Bước 1: Tải và chuẩn bị Dataset (Download)**
+Tập dữ liệu gốc sẽ được tự động lấy từ 🔗 [Link Github Dataset](https://github.com/guilhermedom/resnet50-transfer-learning-cats-and-dogs/tree/main/data/raw).
+Dữ liệu được tải về và tự động giải nén vào thư mục `data/` với cấu trúc ảnh phân chia rõ ràng.
 ```bash
 python download_data.py
 ```
 
----
-
-## 🚀 Các bước thực thi chi tiết
-
-### 🐳 Cách 1: Chạy bằng Docker (Khuyến nghị)
-Dự án đã cấu hình sẵn Docker để tự động hóa toàn bộ luồng (Tải dữ liệu ➔ Huấn luyện ➔ Đo lường). Để chạy tất cả:
-```bash
-docker compose up --build
-```
-> *Mẹo:* Nếu bạn chỉ muốn chạy một bước duy nhất (ví dụ: benchmark) bỏ qua tải dữ liệu và huấn luyện, hãy sử dụng:
-> ```bash
-> docker compose run --no-deps benchmark
-> ```
-
-### 💻 Cách 2: Chạy trực tiếp trên máy (Local)
-
-**Bước 1: Huấn luyện mô hình (Fine-Tuning ResNet50)**
+**Bước 2: Huấn luyện mô hình (Train)**
+Sử dụng phương pháp Transfer Learning với ResNet50 (đóng băng trọng số gốc, thêm phần đầu phân loại mới `GlobalAveragePooling2D` → `Dropout(0.2)` → `Dense(1)`).
+Mô hình sau khi huấn luyện sẽ được xuất ra file `dog_cat_resnet50.keras`.
 ```bash
 python train_dog_cat.py
 ```
-* **Cơ chế hoạt động:**
-  - Tải kiến trúc backbone **ResNet50** đã pretrained trên ImageNet (`include_top=False`).
-  - Đóng băng (freeze) các tầng gốc.
-  - Gắn classification head mới: `GlobalAveragePooling2D` → `Dropout(0.2)` → `Dense(1, activation='sigmoid')`.
-  - Lưu mô hình tại: `dog_cat_resnet50.keras`.
 
-**Bước 2: Lượng tử hóa INT8 & Benchmark hiệu năng**
+**Bước 3: Lượng tử hóa INT8 & Đo hiệu năng (Quantize & Benchmark)**
+Thực hiện quá trình Lượng tử hóa nguyên (Post-Training Integer Quantization - PTQ) dựa trên tập dữ liệu mồi, xuất ra file `resnet_cat_dog_quantized.tflite`.
+Script sau đó sẽ chạy benchmark so sánh tốc độ, dung lượng và tiêu thụ RAM trực tiếp trên tập test chuẩn `microsoft/cats_vs_dogs` của HuggingFace.
 ```bash
 python benchmark_hf.py
 ```
-* **Cơ chế hoạt động:**
-  1. Lấy dữ liệu mồi (Calibration Dataset) từ tập training local.
-  2. Tải tập test từ dataset `microsoft/cats_vs_dogs` trên HuggingFace.
-  3. Lượng tử hóa PTQ nguyên INT8 ra file `resnet_cat_dog_quantized.tflite`.
-  4. Đánh giá tốc độ, dung lượng và độ chính xác giữa hai mô hình.
 
 ---
 
@@ -126,12 +126,12 @@ Kết quả đo đạc trực tiếp từ quá trình chạy thử nghiệm nghi
 | Tiêu chí | Mô hình Keras (.keras) | Mô hình TFLite Quantized | So sánh & Đánh giá |
 | :--- | :---: | :---: | :--- |
 | **Dung lượng file (Model Size)** | **90.63 MB** | **23.13 MB** | 🔻 **Giảm ~74.5% dung lượng** |
-| **Độ chính xác (Accuracy)** | **96.00%** | **95.00%** | 🎯 **Chỉ chênh lệch 1.00%** |
-| **Thời gian phản hồi/ảnh (Latency)** | **143.23 ms** | **22.93 ms** | ⚡ **Tăng tốc phản hồi ~6.2x (nhanh hơn rất nhiều)** |
-| **Throughput (FPS)** | **~6.98 frames/s** | **~43.62 frames/s** | 🚀 **Xử lý lượng ảnh lớn hơn gấp ~6.2 lần** |
-| **Tiêu thụ RAM (Tăng thêm)** | **~60.18 MB** | **~0.00 MB** | 💾 **TFLite tận dụng rất tốt bộ nhớ** |
-| **Độ phức tạp (OPs)** | **3.856 GFLOPs** | **3.856 GOPs (INT8)** | ⚙️ **Chuyển Floating-point sang Integer** |
-| **Latency lý thuyết** | **19.28 ms** (0.2 TFLOPS) | **0.96 ms** (4.0 TOPS) | 💻 **Khả năng dự đoán trên Edge AI tốt** |
+| **Độ chính xác (Accuracy)** | **96.00%** | **95.50%** | 🎯 **Chỉ chênh lệch 0.50%** |
+| **Thời gian phản hồi/ảnh (Latency)** | **192.53 ms** | **23.29 ms** | ⚡ **Tăng tốc phản hồi ~8.2x (nhanh hơn rất nhiều)** |
+| **Throughput (FPS)** | **~5.19 frames/s** | **~42.93 frames/s** | 🚀 **Xử lý lượng ảnh lớn hơn gấp ~8.2 lần** |
+| **RAM tăng thêm (load+infer)** | **~193.82 MB** | **~188.13 MB** | ⚖️ **Tương đương nhau lúc chạy** |
+| **RAM đỉnh process (peak)** | **~1092.63 MB** | **~1074.50 MB** | 💾 **TFLite tối ưu bộ nhớ tổng tốt hơn** |
+| **Độ phức tạp (OPs)** | **7.751 GFLOPs** | **7.751 GOPs (INT8)** | ⚙️ **Chuyển Floating-point sang Integer** |
 
 > 📌 **Nhận xét chuyên môn:**
 > - Mô hình sau khi lượng tử hóa sang INT8 tiết kiệm gần **75% bộ nhớ lưu trữ**, cực kỳ lý tưởng để nạp vào ROM/Flash của các board mạch nhúng, thiết bị Edge AI (Raspberry Pi, Jetson Nano, Coral Edge TPU).

@@ -15,7 +15,7 @@ import time
 
 DATA_DIR = os.environ.get("DATA_DIR", "data")
 MODEL_DIR = os.environ.get("MODEL_DIR", ".")
-NUM_TEST_IMAGES = 200
+NUM_TEST_IMAGES = 500
 NUM_CALIB_IMAGES = 150  # Số ảnh mồi lấy từ tập Train
 
 KERAS_PATH = os.path.join(MODEL_DIR, "dog_cat_resnet50.keras")
@@ -186,6 +186,19 @@ def run_tflite():
     print("\n[3/3] Bắt đầu đo TFLite (Quantized) trên tập HuggingFace...")
     interpreter = tf.lite.Interpreter(model_path=TFLITE_PATH)
     interpreter.allocate_tensors()
+    
+    # In ra một số Scale và Zero Point để kiểm tra
+    print("\n--- THÔNG TIN LƯỢNG TỬ HÓA (SCALE & ZERO POINT) ---")
+    count = 0
+    for tensor in interpreter.get_tensor_details():
+        scale, zero_point = tensor['quantization']
+        if scale > 0.0:  # Chỉ in những tensor đã được quantize sang INT8
+            print(f"Lớp: {tensor['name'][:40]:<40} | Scale: {scale:.6f} | Zero Point: {zero_point}")
+            count += 1
+            if count >= 5:  # In 5 tensor đại diện để tránh trôi màn hình
+                break
+    print("---------------------------------------------------\n")
+
     input_index = interpreter.get_input_details()[0]["index"]
     output_index = interpreter.get_output_details()[0]["index"]
 

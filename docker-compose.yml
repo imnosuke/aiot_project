@@ -12,9 +12,14 @@ x-app: &app
     HF_HOME: /cache/hf
     KERAS_HOME: /cache/keras
   volumes:
-    - dataset:/data
+    - ./data:/data
     - ./outputs:/outputs
     - cache:/cache
+    # Ánh xạ code trực tiếp từ ngoài vào container (không cần build lại khi sửa code)
+    - ./train_dog_cat.py:/app/train_dog_cat.py
+    - ./benchmark_hf.py:/app/benchmark_hf.py
+    - ./resnet50_model.py:/app/resnet50_model.py
+    - ./download_data.py:/app/download_data.py
 
 services:
   download-data:
@@ -44,5 +49,4 @@ services:
         condition: service_completed_successfully
 
 volumes:
-  dataset:
   cache:
