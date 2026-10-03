@@ -71,47 +71,47 @@ Nội dung gói phụ thuộc:
 Tập dữ liệu ảnh dùng cho huấn luyện và kiểm thử được lấy từ repository:
 🔗 **Link Dataset:** [guilhermedom/resnet50-transfer-learning-cats-and-dogs (data/raw)](https://github.com/guilhermedom/resnet50-transfer-learning-cats-and-dogs/tree/main/data/raw)
 
-### Hướng dẫn thiết lập:
-1. Tải các thư mục ảnh tương ứng trong link trên về máy.
-2. Tạo thư mục `data/` trong thư mục gốc của dự án `AIOT/` và sắp xếp các file ảnh theo đúng cấu trúc sau:
-   ```
-   AIOT/
-   └── data/
-       ├── cats_training/cats/*.jpg
-       ├── dogs_training/dogs/*.jpg
-       ├── cats_testing/cats/*.jpg
-       └── dogs_testing/dogs/*.jpg
-   ```
+Dự án có sẵn script để tải dữ liệu tự động. Dữ liệu sẽ được tự động tải về và giải nén vào thư mục `data/` với cấu trúc chuẩn:
+
+```bash
+python download_data.py
+```
 
 ---
 
 ## 🚀 Các bước thực thi chi tiết
 
-### Bước 1: Huấn luyện mô hình (Fine-Tuning ResNet50)
-Chạy script huấn luyện:
+### 🐳 Cách 1: Chạy bằng Docker (Khuyến nghị)
+Dự án đã cấu hình sẵn Docker để tự động hóa toàn bộ luồng (Tải dữ liệu ➔ Huấn luyện ➔ Đo lường). Để chạy tất cả:
+```bash
+docker compose up --build
+```
+> *Mẹo:* Nếu bạn chỉ muốn chạy một bước duy nhất (ví dụ: benchmark) bỏ qua tải dữ liệu và huấn luyện, hãy sử dụng:
+> ```bash
+> docker compose run --no-deps benchmark
+> ```
+
+### 💻 Cách 2: Chạy trực tiếp trên máy (Local)
+
+**Bước 1: Huấn luyện mô hình (Fine-Tuning ResNet50)**
 ```bash
 python train_dog_cat.py
 ```
 * **Cơ chế hoạt động:**
-  - Tải kiến trúc backbone **ResNet50** đã pretrained trên tập ImageNet (`include_top=False`).
-  - Đóng băng (freeze) các tầng gốc để giữ các đặc trưng bậc thấp.
+  - Tải kiến trúc backbone **ResNet50** đã pretrained trên ImageNet (`include_top=False`).
+  - Đóng băng (freeze) các tầng gốc.
   - Gắn classification head mới: `GlobalAveragePooling2D` → `Dropout(0.2)` → `Dense(1, activation='sigmoid')`.
-  - Tự động kích hoạt GPU (nếu máy có GPU NVIDIA hỗ trợ CUDA) với chế độ cấp phát động `memory_growth`.
-  - Huấn luyện qua 5 epochs và tự động lưu mô hình tại: `dog_cat_resnet50.keras`.
+  - Lưu mô hình tại: `dog_cat_resnet50.keras`.
 
----
-
-### Bước 2: Lượng tử hóa INT8 & Benchmark hiệu năng
-Chạy script lượng tử hóa và đánh giá:
+**Bước 2: Lượng tử hóa INT8 & Benchmark hiệu năng**
 ```bash
 python benchmark_hf.py
 ```
 * **Cơ chế hoạt động:**
-  1. **Calibration Dataset (Dữ liệu mồi):** Lấy ngẫu nhiên 150 ảnh từ thư mục training local để mô phỏng dải phân bố động của activation tensor.
-  2. **Benchmark Dataset:** Tải 200 ảnh chuẩn từ dataset `microsoft/cats_vs_dogs` trên HuggingFace để kiểm tra độ chính xác độc lập.
-  3. **Đo đạc mô hình gốc:** Tính toán độ trễ trung bình (latency), dung lượng file, và accuracy của file `.keras`.
-  4. **Post-Training Quantization (PTQ):** Ép toàn bộ trọng số và activation sang kiểu số nguyên 8-bit (`INT8`), xuất ra file `resnet_cat_dog_quantized.tflite`.
-  5. **Đo đạc mô hình Quantized:** Đánh giá độ trễ và độ chính xác của mô hình TFLite INT8 trên cùng tập test.
+  1. Lấy dữ liệu mồi (Calibration Dataset) từ tập training local.
+  2. Tải tập test từ dataset `microsoft/cats_vs_dogs` trên HuggingFace.
+  3. Lượng tử hóa PTQ nguyên INT8 ra file `resnet_cat_dog_quantized.tflite`.
+  4. Đánh giá tốc độ, dung lượng và độ chính xác giữa hai mô hình.
 
 ---
 

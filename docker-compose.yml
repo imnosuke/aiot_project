@@ -1,0 +1,48 @@
+# Run the whole pipeline on any machine with:  docker compose up --build
+# Stages: download-data -> train -> benchmark
+# Outputs (models) land in ./outputs on the host.
+x-app: &app
+  build: .
+  image: aiot-project_mid_term:latest
+  environment:
+    DATA_DIR: /data
+    MODEL_DIR: /outputs
+    EPOCHS: ${EPOCHS:-3}
+    TF_CPP_MIN_LOG_LEVEL: "1"
+    HF_HOME: /cache/hf
+    KERAS_HOME: /cache/keras
+  volumes:
+    - dataset:/data
+    - ./outputs:/outputs
+    - cache:/cache
+
+services:
+  download-data:
+    <<: *app
+    command: python download_data.py
+
+  train:
+    <<: *app
+    command: python train_dog_cat.py
+    depends_on:
+      download-data:
+        condition: service_completed_successfully
+    # GPU (optional, needs NVIDIA Container Toolkit): uncomment
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  benchmark:
+    <<: *app
+    command: python benchmark_hf.py
+    depends_on:
+      train:
+        condition: service_completed_successfully
+
+volumes:
+  dataset:
+  cache:

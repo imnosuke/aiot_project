@@ -1,0 +1,15 @@
+.git
+.gitignore
+__pycache__
+*.pyc
+.env
+.venv
+venv/
+env/
+README.md
+
+# Data and models are downloaded/produced at runtime via volumes
+data/
+outputs/
+*.keras
+*.tflite

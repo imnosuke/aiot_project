@@ -12,7 +12,7 @@ NUM_CALIB_IMAGES = 150 # Số ảnh mồi lấy từ tập Train
 # 1. CHUẨN BỊ TẬP DỮ LIỆU ĐẠI DIỆN (REPRESENTATIVE DATASET) TỪ TẬP TRAIN LOCAL
 # ==============================================================================
 print("Đang chuẩn bị tập dữ liệu mồi (Calibration) từ thư mục local...")
-base_dir = r"C:\Users\PC\Desktop\Nosuke\AIOT\data"
+base_dir = "data"
 cats_train_dir = os.path.join(base_dir, "cats_training", "cats")
 dogs_train_dir = os.path.join(base_dir, "dogs_training", "dogs")
 
@@ -59,7 +59,7 @@ benchmark_ds = tf.data.Dataset.from_tensor_slices((processed_images, processed_l
 # ==============================================================================
 # 3. LOAD MÔ HÌNH KERAS ĐÃ HUẤN LUYỆN
 # ==============================================================================
-keras_model_path = r"C:\Users\PC\Desktop\Nosuke\AIOT\dog_cat_resnet50.keras"
+keras_model_path = "dog_cat_resnet50.keras"
 print(f"\n[1/3] Đang tải mô hình ResNet50 phân loại Chó/Mèo: {keras_model_path}...")
 fine_tuned_model = tf.keras.models.load_model(keras_model_path)
 
@@ -152,7 +152,7 @@ def benchmark_tflite(tflite_path, dataset):
 # ==============================================================================
 # 7. THỰC THI VÀ IN KẾT QUẢ
 # ==============================================================================
-tflite_model_path = r"C:\Users\PC\Desktop\Nosuke\AIOT\resnet_cat_dog_quantized.tflite"
+tflite_model_path = "resnet_cat_dog_quantized.tflite"
 
 k_acc, k_lat, k_size = benchmark_keras(fine_tuned_model, benchmark_ds, keras_model_path)
 quantize_to_tflite(fine_tuned_model, tflite_model_path)

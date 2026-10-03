@@ -4,6 +4,10 @@ from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
 from tensorflow.keras.models import Model
 import os
 
+DATA_DIR = os.environ.get("DATA_DIR", "data")
+MODEL_DIR = os.environ.get("MODEL_DIR", ".")
+EPOCHS = int(os.environ.get("EPOCHS", "3"))
+
 # --- CẤU HÌNH SỬ DỤNG GPU ---
 gpus = tf.config.list_physical_devices('GPU')
 if gpus:
@@ -52,12 +56,12 @@ def create_dataset(cat_dir, dog_dir):
 # --- 1. CHUẨN BỊ DỮ LIỆU ---
 print("Đang chuẩn bị dữ liệu...")
 train_ds = create_dataset(
-    r"C:\Users\PC\Desktop\Nosuke\AIOT\data\cats_training\cats",
-    r"C:\Users\PC\Desktop\Nosuke\AIOT\data\dogs_training\dogs"
+    os.path.join(DATA_DIR, "cats_training", "cats"),
+    os.path.join(DATA_DIR, "dogs_training", "dogs")
 )
 val_ds = create_dataset(
-    r"C:\Users\PC\Desktop\Nosuke\AIOT\data\cats_testing\cats",
-    r"C:\Users\PC\Desktop\Nosuke\AIOT\data\dogs_testing\dogs"
+    os.path.join(DATA_DIR, "cats_testing", "cats"),
+    os.path.join(DATA_DIR, "dogs_testing", "dogs")
 )
 
 # --- 2. XÂY DỰNG MÔ HÌNH TRANSFER LEARNING ---
@@ -84,9 +88,10 @@ model.compile(optimizer='adam',
 # --- 3. HUẤN LUYỆN MÔ HÌNH ---
 print("Bắt đầu huấn luyện mô hình (Fine-tuning)...")
 # Train 5 epochs (bạn có thể tăng lên nếu muốn độ chính xác cao hơn)
-model.fit(train_ds, validation_data=val_ds, epochs=5)
+model.fit(train_ds, validation_data=val_ds, epochs=EPOCHS)
 
 # --- 4. LƯU MÔ HÌNH ---
-save_path = r"C:\Users\PC\Desktop\Nosuke\AIOT\dog_cat_resnet50.keras"
+os.makedirs(MODEL_DIR, exist_ok=True)
+save_path = os.path.join(MODEL_DIR, "dog_cat_resnet50.keras")
 model.save(save_path)
 print(f"Hoàn thành! Đã lưu mô hình tại: {save_path}")
