@@ -46,7 +46,7 @@ AIOT/
 Trước khi cài đặt và chạy thử nghiệm, bạn cần tải dự án về máy cục bộ. Hãy mở terminal và chạy:
 
 ```bash
-git clone https://github.com/<username>/AIOT.git  # Thay bằng URL Git thực tế của bạn
+git clone https://github.com/imnosuke/aiot_project.git  # Thay bằng URL Git thực tế của bạn
 cd AIOT
 ```
 
